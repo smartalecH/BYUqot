@@ -5,11 +5,8 @@
 # A mask design used to align the 3D printer to a silicon photonic chip
 #
 # ------------------------------------------------------------------ #
-# Version history
-# ------------------------------------------------------------------ #
-# 09 Apr 2018 - AMH - Initialization
-#
-#
+# VERSION HISTORY
+# 10 Apr 2018 - AMH - Initialization
 #
 # ------------------------------------------------------------------ #
 
@@ -23,23 +20,35 @@ import gdspy
 import numpy as np
 
 # ------------------------------------------------------------------ #
+#      Design Constants
+# ------------------------------------------------------------------ #
+
+# Cell parameters
+layerNumber = 1
+
+# Vernier mask design parameters (all values in microns)
+numFingers        = 10       # Number of fingers to have on top and bottom
+fingerWidth       = 30       # Width of each finger
+fingerSpacing     = 40       # Spacing between fingers
+longFingerLength  = 200;     # Length of the long, middle finger
+shortFingerLength = 150;     # Length of the short, outer fingers
+baseThickness     = 76;      # Thickness of edge border of design
+
+separationDistance = 380     # distance from edge of pattern to origin
+
+buffer        = 50                         # Kerf width of blade
+innerBoxWidth = 8.78e3                     # Actual dimensions of chip
+outerBoxWidth = innerBoxWidth + buffer     # Buffered chip size
+
+numCells = 12             # number of repeated cells in each dimension
+
+# ------------------------------------------------------------------ #
 #      Create single Vernier pattern
 # ------------------------------------------------------------------ #
 #
 def vernier():
     # Intialize cell
     vernierCell = gdspy.Cell('vernier')
-
-    # Cell parameters
-    layerNumber = 1
-
-    # Vernier mask design parameters (all values in microns)
-    numFingers        = 10       # Number of fingers to have on top and bottom
-    fingerWidth       = 30       # Width of each finger
-    fingerSpacing     = 40       # Spacing between fingers
-    longFingerLength  = 200;     # Length of the long, middle finger
-    shortFingerLength = 150;     # Length of the short, outer fingers
-    baseThickness     = 76;      # Thickness of edge border of design
 
     # Calculate properties
     vernierWidth  = (longFingerLength + baseThickness)
@@ -90,12 +99,6 @@ def vernier2D():
     vernierWidth  = abs(vernierDims[0,0] - vernierDims[1,0])
     vernierHeight = abs(vernierDims[0,1] - vernierDims[1,1])
 
-    # Add center center square for reference
-    vernier2DCell.add(gdspy.Rectangle([-5,-5],[5,5],layer=1))
-
-    # 2D mask properties
-    separationDistance = 380     # distance from edge of pattern to origin
-
     # Place one Vernier pattern in the x direction
     xCell = gdspy.CellReference(vernierCell,rotation=-90)
     xCell.translate(-(vernierHeight/2 + separationDistance),-vernierWidth/2)
@@ -109,18 +112,12 @@ def vernier2D():
     # Return final cell
     return vernier2DCell
 
-
 # ------------------------------------------------------------------ #
 #      Create Box outline
 # ------------------------------------------------------------------ #
 def boxOutline():
     # initialize cell
     outlineCell = gdspy.Cell('outline')
-
-    # Design paramters
-    outerBoxWidth = 9e3     # 9 mm large chip
-    innerBoxWidth = 8.84e3  # Actual dimensions of chip
-    layerNumber   = 1
 
     # define an outer box
     outerBox = gdspy.Rectangle([-outerBoxWidth/2,-outerBoxWidth/2],
@@ -149,9 +146,6 @@ def vernierChip():
     vernier2DCell   = vernier2D()
     boxOutlineCell  = boxOutline()
 
-    # Design Parameters
-    buffer = 78     # place origin of each cell away from edge
-
     # Add border first
     vernierChipCell.add(gdspy.CellReference(boxOutlineCell,(0,0)))
     chipDims   = vernierChipCell.get_bounding_box()
@@ -161,8 +155,8 @@ def vernierChip():
     thetaPos = [45, 135, -135, -45]
     thetaRot = [0, 90, 180, -90]
     for k in range(0,4):
-        xPos = np.sign(np.cos(np.deg2rad(thetaPos[k]))) * (chipWidth/2 - buffer)
-        yPos = np.sign(np.sin(np.deg2rad(thetaPos[k]))) * (chipWidth/2 - buffer)
+        xPos = np.sign(np.cos(np.deg2rad(thetaPos[k]))) * (chipWidth/2 - buffer/2)
+        yPos = np.sign(np.sin(np.deg2rad(thetaPos[k]))) * (chipWidth/2 - buffer/2)
         vernierChipCell.add(gdspy.CellReference(vernier2DCell,(xPos,yPos),rotation=thetaRot[k]))
 
     # return cell
@@ -177,9 +171,6 @@ def vernierMask():
     # Initialize cells
     vernierMaskCell = gdspy.Cell('vernierMask')
     vernierChipCell = vernierChip()
-
-    # Design parameters
-    numCells = 11             # number of repeated cells in each dimension
 
     # Get chip dimensions
     chipDims   = vernierChipCell.get_bounding_box()
@@ -196,10 +187,10 @@ def vernierMask():
     # return final cell
     return vernierMaskCell
 
-
 # ------------------------------------------------------------------ #
 #      OUTPUT
 # ------------------------------------------------------------------ #
+
 vernierMask()
 
 # Output the layout to a GDSII file (default to all created cells).
