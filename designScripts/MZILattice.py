@@ -1,6 +1,32 @@
 
-import objectLibrary as obLib
+# ------------------------------------------------------------------ #
+# MZILattice.py
+# ------------------------------------------------------------------ #
+#
+# A series of MZI's for 3D printing testing purposes
+#
+# ------------------------------------------------------------------ #
+# VERSION HISTORY
+# 10 Apr 2018 - AMH - Initialization
+#
+# ------------------------------------------------------------------ #
+
+
+# ------------------------------------------------------------------ #
+#      Import libraries
+# ------------------------------------------------------------------ #
+
+# Get project library path to import library files
+import sys
+import os
+d = os.path.dirname(os.getcwd())
+libPath = os.path.abspath(os.path.join(d, 'lib'))
+sys.path.insert(0, libPath)
+
+# Import all other libraries
 import gdspy
+import numpy as np
+import objectLibrary as obLib
 
 # ------------------------------------------------------------------ #
 #      Create single MZI
@@ -61,4 +87,6 @@ MZIcell = MZI(deltaL = 30, Lref = 20, waveguideWidth = 0.5);
 
 # Output the layout to a GDSII file (default to all created cells).
 # Set the units we used to micrometers and the precision to nanometers.
-gdspy.write_gds('tutorial.gds', unit=1.0e-6, precision=1.0e-9)
+filename = 'MZI.gds'
+outPath = os.path.abspath(os.path.join(d, 'GDS/'+filename))
+gdspy.write_gds(outPath, unit=1.0e-6, precision=1.0e-9)

@@ -15,9 +15,17 @@
 #      Import libraries
 # ------------------------------------------------------------------ #
 
-import objectLibrary as obLib
+# Get project library path to import library files
+import sys
+import os
+d = os.path.dirname(os.getcwd())
+libPath = os.path.abspath(os.path.join(d, 'lib'))
+sys.path.insert(0, libPath)
+
+# Import all other libraries
 import gdspy
 import numpy as np
+import objectLibrary as obLib
 
 # ------------------------------------------------------------------ #
 #      Design Constants
@@ -42,10 +50,13 @@ outerBoxWidth = innerBoxWidth + buffer     # Buffered chip size
 
 numCells = 12             # number of repeated cells in each dimension
 
+# Now create a series of functions that return a cell. We'll leverage the recursive
+# nature of GDS files to keep things simple.
+
 # ------------------------------------------------------------------ #
 #      Create single Vernier pattern
 # ------------------------------------------------------------------ #
-#
+
 def vernier():
     # Intialize cell
     vernierCell = gdspy.Cell('vernier')
@@ -87,6 +98,7 @@ def vernier():
 # ------------------------------------------------------------------ #
 #      Create 2D Vernier pattern from single pattern
 # ------------------------------------------------------------------ #
+
 def vernier2D():
     # Intialize 2D cell
     vernier2DCell = gdspy.Cell('vernier2D')
@@ -115,6 +127,7 @@ def vernier2D():
 # ------------------------------------------------------------------ #
 #      Create Box outline
 # ------------------------------------------------------------------ #
+
 def boxOutline():
     # initialize cell
     outlineCell = gdspy.Cell('outline')
@@ -195,4 +208,6 @@ vernierMask()
 
 # Output the layout to a GDSII file (default to all created cells).
 # Set the units we used to micrometers and the precision to nanometers.
-gdspy.write_gds('vernierMask.gds', unit=1.0e-6, precision=1.0e-9)
+filename = 'vernierMask.gds'
+outPath = os.path.abspath(os.path.join(d, 'GDS/'+filename))
+gdspy.write_gds(outPath, unit=1.0e-6, precision=1.0e-9)
