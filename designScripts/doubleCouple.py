@@ -100,20 +100,30 @@ def ringResonator():
 def taper():
     # Initialize cells
     taperCell = gdspy.Cell('Taper')
-    
 
-# ------------------------------------------------------------------ #
-#      Single Circuit
-# ------------------------------------------------------------------ #
+    # Create geometry
+    taperPts = [(-taperLength/2,-taperWidth/2),(-taperLength/2,taperWidth/2),(taperLength/2,waveguideWidth/2),(taperLength/2,-waveguideWidth/2)]
+    taperPoly = gdspy.Polygon(taperPts,layer=layerNumber)
+
+    # Add geometry
+    taperCell.add(taperPoly)
+
+    # Return cell
+    return taperCell
 
 # ------------------------------------------------------------------ #
 #      Total Chip
 # ------------------------------------------------------------------ #
+def chip():
+    # Initialize cell
+    chipCell = gdspy.cell('doubleCouple')
+
+    # Iterate through all couplers
 
 # ------------------------------------------------------------------ #
 #      OUTPUT
 # ------------------------------------------------------------------ #
-ringResonator()
+
 
 # Output the layout to a GDSII file (default to all created cells).
 # Set the units we used to micrometers and the precision to nanometers.
