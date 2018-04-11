@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------------ #
 # MZILattice.py
 # ------------------------------------------------------------------ #
@@ -76,8 +75,6 @@ def MZI(deltaL = 40, Lref = 20, gapLength = 10, waveguideWidth = 0.5, bendRadius
     MZIcell.add(gdspy.CellReference(topBranch, (-Lref/2,+(cen2Branch))))
 
     return MZIcell
-
-
 
 # ------------------------------------------------------------------ #
 #      OUTPUT
