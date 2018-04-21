@@ -1,0 +1,115 @@
+# neffSIms.lsf
+# 
+# Simulates a simple SOI strip waveguide and varies
+# the cladding index at 1550 nm. The first mode is 
+# calculated and stored in a matlab file for 
+# futher analysis.
+#
+# History
+# 21 APR 2018 - Alec - Creation
+#
+# ------------------------------------------------ #
+
+
+
+# Sweep params
+water    = 1.3180;
+glycerol = 1.4584;
+N = 2;
+claddingBank = linspace(1,3,2);
+lambda = 1550e-9;
+
+# Preallocate
+neff_TE = zeros(N,1);
+ETEx = cell(N);
+ETEy = cell(N);
+neff_TM = zeros(N,1);
+ETMx = cell(N);
+ETMy = cell(N);
+
+# cladding params
+claddingThick = 4e-6;
+
+# waveguide params
+waveguidWidth = 500e-9;
+waveguidHeight = 220e-9;
+zThreshold = 100e-9;
+indexSi = 3.4757;
+
+# handle params
+handleThick = 2e-6;
+
+# BOX params
+BOXthickness = 2e-6;
+indexSiO2 = 1.4440;
+
+# iterate through all cladding options
+for(k=1:N){
+    switchtolayout;
+    deleteall;
+    # Add handle
+    addrect;
+    set('x',0);
+    set('x span', 10*waveguidWidth);
+    set('y max', -(BOXthickness + waveguidHeight/2)); set('y min',-(BOXthickness + waveguidHeight/2 + handleThick));
+    set('z span', zThreshold);
+    set('z', 0);
+    set('index', indexSi);
+    
+    
+    # Add BOX
+    addrect;
+    set('x',0);
+    set('x span', 10*waveguidWidth);
+    set('y max', -waveguidHeight/2); set('y min',-(BOXthickness + waveguidHeight/2));
+    set('z span', zThreshold);
+    set('z', 0);
+    set('index', indexSiO2);
+    
+    # Add cladding
+    addrect;
+    set('x',0);
+    set('x span', 10*waveguidWidth);
+    set('y min', -waveguidHeight/2); set('y max',(claddingThick - waveguidHeight/2));
+    set('z span', zThreshold);
+    set('z', 0);
+    set('index', claddingBank(k));
+    
+    
+    # Add waveguide
+    addrect;
+    set('x', 0); set('y', 0);
+    set('x span', waveguidWidth);
+    set('y span', waveguidHeight);
+    set('z', 0);
+    set('z span', zThreshold);
+    
+    set('index', indexSi);
+    
+    # add mesh
+    addmesh;
+    set('x',0); set('x span', 5*waveguidWidth);
+    set('y',0); set('y span', BOXthickness);
+    set('z',0); set('z span', zThreshold/2);
+    
+    addfde;
+    set('x',0); set('x span', 5*waveguidWidth);
+    set('y',0); set('y span', BOXthickness);
+    set('z',0);
+    
+    setanalysis('wavelength',lambda);
+    setanalysis('number of test modes',2);
+    findmodes;
+    
+    neff_TE(k) = getdata('FDE::data::mode1','neff');
+    ETEx{k} = getdata('FDE::data::mode1','Ex');
+    ETEy{k} = getdata('FDE::data::mode1','Ey');
+    
+    neff_TM(k) = getdata('FDE::data::mode2','neff');
+    ETMx{k} = getdata('FDE::data::mode2','Ex');
+    ETMy{k} = getdata('FDE::data::mode2','Ey');
+}
+
+# store matlab script
+matlabsave('neffExperiment',claddingBank,neff_TE,ETEx,ETEy,neff_TM,ETMx,ETMy);
+
