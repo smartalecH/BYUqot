@@ -7,6 +7,7 @@
 # ------------------------------------------------------------------ #
 # VERSION HISTORY
 # 10 Apr 2018 - AMH - Initialization
+# 24 Apr 2018 - AMH - Added vernier pattern, directional couplers
 #
 # ------------------------------------------------------------------ #
 
@@ -28,62 +29,100 @@ import numpy as np
 import objectLibrary as obLib
 
 # ------------------------------------------------------------------ #
-#      Create single MZI
+#      Initialize parent cell
 # ------------------------------------------------------------------ #
 
-def MZI(deltaL = 40, Lref = 20, gapLength = 10, waveguideWidth = 0.5, bendRadius = 5):
+MZILatticeCell = gdspy.Cell('MZILattice')
 
-    layerNumber = 1
+# ------------------------------------------------------------------ #
+#      Add a floor plan
+# ------------------------------------------------------------------ #
 
-    LTop = Lref + deltaL
+# Width / height of our chip
+chipDim = 8.78 * 1e3
 
-    leg = (LTop - Lref) / 2
+# width of all our waveguides
+waveguideWidth = 0.5;
 
-    YBranch = obLib.YBranch()
+layerNumber = 1
 
-    # Connect bottom branch
-    bottomBranch = gdspy.Cell('referenceBranch')
-    bottomBranch.add(gdspy.Rectangle([-Lref/2 , waveguideWidth/2],[Lref/2, -waveguideWidth/2],layer=1))
+# Add floor plan
+MZILatticeCell.add(gdspy.Rectangle([0,0],[chipDim,-chipDim],layer=100))
 
-    # Do top branch
-    bendRadius = 5;
+# ------------------------------------------------------------------ #
+#      Create several MZI's along chip
+# ------------------------------------------------------------------ #
 
-    outerArm = (Lref-gapLength)/2
+couplePitch = 250     # distance between couplers
+numMZI = np.floor(chipDim/couplePitch)    # Number of MZIs given pitch
 
-    length = [outerArm,leg,gapLength,leg,outerArm]
-    print(length)
-    turn = [1,-1,-1,1]
-    topBranch = gdspy.Cell('deltaBranch')
+# Initialize two kinds of MZIs and taper
+MZIcellY = obLib.MZI(deltaL = 200, bendRadius = 10, Lref = 100, gapLength = 50, waveguideWidth = 0.5,coupleType="Y");
+MZIcellC = obLib.MZI(deltaL = 200, bendRadius = 10,  Lref = 100, gapLength = 50, waveguideWidth = 0.5,coupleType="C");
+couplingTaperCell = obLib.couplingTaper()
 
-    topBranchPoly = gdspy.L1Path((0, 0), '+x', waveguideWidth, length, turn,layer=1);
-    topBranchPoly.fillet(bendRadius)
-    leftSquare    = gdspy.Rectangle([0,-waveguideWidth/2],[waveguideWidth,waveguideWidth/2],layer=1)
-    rightSquare   = gdspy.Rectangle([Lref-waveguideWidth,-waveguideWidth/2],[Lref,waveguideWidth/2],layer=1)
-
-    union = gdspy.fast_boolean(topBranchPoly,[leftSquare,rightSquare],'or',layer=layerNumber)
-
-    topBranch.add(union)
+# Get dimensions of the directional coupler to compensate for height offset
+MZIcellCDims   = MZIcellC.get_bounding_box()
+MZIcellWidth  = abs(MZIcellCDims[0,0] - MZIcellCDims[1,0])
+yOffset = abs(MZIcellCDims[0,1])
 
 
-    # Half the hieght of the entire splitter - used to align branches with splitters
-    cen2Branch = 2.0 + 1.2/2 - waveguideWidth/2.0
+# Get dimensions of taper
+taperDims   = couplingTaperCell.get_bounding_box()
+taperWidth  = abs(taperDims[0,0] - taperDims[1,0])
+taperHeight = abs(taperDims[0,1] - taperDims[1,1])
 
-    MZIcell = gdspy.Cell('MZI')
-    MZIcell.add(gdspy.CellReference(YBranch, (-Lref/2 - 15,0)))
-    MZIcell.add(gdspy.CellReference(YBranch, (Lref/2 + 15,0),rotation=180))
-    MZIcell.add(gdspy.CellReference(bottomBranch, (0,-(cen2Branch))))
-    MZIcell.add(gdspy.CellReference(topBranch, (-Lref/2,+(cen2Branch))))
+# Iterate through MZIs and draw system
+for k in range(1,int(numMZI)):
+    if k % 3 == 0:
+        # Initialize unit cell
+        MZIUnitCell = gdspy.Cell('MZIUnit_'+str(k))
 
-    return MZIcell
+        # add coupler
+        pos = (k*couplePitch,-k*couplePitch + yOffset - waveguideWidth/2)
+        MZIUnitCell.add(gdspy.CellReference(MZIcellC,pos))
+
+        # add tapers
+        for ktaper in range(0,3):
+            posTaper = (taperWidth/2,-(k+ktaper)*couplePitch)
+            MZIUnitCell.add(gdspy.CellReference(couplingTaperCell,posTaper))
+
+        # connect top taper to coupler
+        MZIUnitCell.add(gdspy.Rectangle(
+            [taperWidth,-k*couplePitch + waveguideWidth/2],
+            [k*couplePitch - MZIcellWidth/2,-k*couplePitch - waveguideWidth/2],layer=layerNumber))
+
+        # connect middle taper to coupler
+
+        # connect bottom taper to coupler
+
+        # consolidate cells to master cell
+        MZILatticeCell.add(gdspy.CellReference(MZIUnitCell))
+
+# ------------------------------------------------------------------ #
+#      Vernier Pattern
+# ------------------------------------------------------------------ #
+
+vernierCell = obLib.vernier(1)
+
+# get dimensions of vernier pattern
+vernierDims   = vernierCell.get_bounding_box()
+vernierWidth  = abs(vernierDims[0,0] - vernierDims[1,0])
+vernierHeight = abs(vernierDims[0,1] - vernierDims[1,1])
+
+# Padd the corner from the floor plan
+padding = 30
+# Add vernier pattern
+pos = (chipDim - (padding), -(padding))
+MZILatticeCell.add(gdspy.CellReference(vernierCell,pos))
 
 # ------------------------------------------------------------------ #
 #      OUTPUT
 # ------------------------------------------------------------------ #
 
-MZIcell = MZI(deltaL = 30, Lref = 20, waveguideWidth = 0.5);
-
 # Output the layout to a GDSII file (default to all created cells).
 # Set the units we used to micrometers and the precision to nanometers.
+
 filename = 'MZI.gds'
 outPath = os.path.abspath(os.path.join(d, 'GDS/'+filename))
 gdspy.write_gds(outPath, unit=1.0e-6, precision=1.0e-9)
