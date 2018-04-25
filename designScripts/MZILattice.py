@@ -44,7 +44,11 @@ chipDim = 8.78 * 1e3
 # width of all our waveguides
 waveguideWidth = 0.5;
 
+deltaL = 200
 layerNumber = 1
+couplerBufferMiddle = 50
+couplerBufferBottom = 100
+TMradius = 10
 
 # Add floor plan
 MZILatticeCell.add(gdspy.Rectangle([0,0],[chipDim,-chipDim],layer=100))
@@ -53,12 +57,12 @@ MZILatticeCell.add(gdspy.Rectangle([0,0],[chipDim,-chipDim],layer=100))
 #      Create several MZI's along chip
 # ------------------------------------------------------------------ #
 
-couplePitch = 250     # distance between couplers
+couplePitch = 127     # distance between couplers
 numMZI = np.floor(chipDim/couplePitch)    # Number of MZIs given pitch
 
 # Initialize two kinds of MZIs and taper
-MZIcellY = obLib.MZI(deltaL = 200, bendRadius = 10, Lref = 100, gapLength = 50, waveguideWidth = 0.5,coupleType="Y");
-MZIcellC = obLib.MZI(deltaL = 200, bendRadius = 10,  Lref = 100, gapLength = 50, waveguideWidth = 0.5,coupleType="C");
+#MZIcellY = obLib.MZI(deltaL = deltaL, bendRadius = TMradius, Lref = 100, gapLength = 50, waveguideWidth = 0.5,coupleType="Y");
+MZIcellC = obLib.MZI(deltaL = deltaL, bendRadius = TMradius,  Lref = 100, gapLength = 50, waveguideWidth = 0.5,coupleType="C");
 couplingTaperCell = obLib.couplingTaper()
 
 # Get dimensions of the directional coupler to compensate for height offset
@@ -82,7 +86,11 @@ for k in range(1,int(numMZI)):
         pos = (k*couplePitch,-k*couplePitch + yOffset - waveguideWidth/2)
         MZIUnitCell.add(gdspy.CellReference(MZIcellC,pos))
 
-        # add tapers
+        # add termination taper to prevent reflections
+        posTaper = (k*couplePitch - MZIcellWidth/2 - taperWidth/2,-k*couplePitch + 2*yOffset - waveguideWidth)
+        MZIUnitCell.add(gdspy.CellReference(couplingTaperCell,posTaper))
+
+        # add coupling tapers
         for ktaper in range(0,3):
             posTaper = (taperWidth/2,-(k+ktaper)*couplePitch)
             MZIUnitCell.add(gdspy.CellReference(couplingTaperCell,posTaper))
@@ -93,8 +101,24 @@ for k in range(1,int(numMZI)):
             [k*couplePitch - MZIcellWidth/2,-k*couplePitch - waveguideWidth/2],layer=layerNumber))
 
         # connect middle taper to coupler
+        length = [k*couplePitch - taperWidth + MZIcellWidth/2 + couplerBufferMiddle,
+                  couplePitch, couplerBufferMiddle + 1]
+        turn = [1,1]
+        l1path = gdspy.L1Path(initial_point=(taperWidth, -(k+1)*couplePitch),
+                              direction='+x', width=waveguideWidth, length=length,
+                              turn=turn, layer=layerNumber)
+        l1path.fillet(radius=TMradius)
+        MZIUnitCell.add(l1path)
 
         # connect bottom taper to coupler
+        length = [k*couplePitch - taperWidth + MZIcellWidth/2 + couplerBufferBottom,
+                  2*couplePitch + 2*yOffset - waveguideWidth, couplerBufferBottom + 1]
+        turn = [1,1]
+        l2path = gdspy.L1Path(initial_point=(taperWidth, -(k+2)*couplePitch),
+                              direction='+x', width=waveguideWidth, length=length,
+                              turn=turn, layer=layerNumber)
+        l2path.fillet(radius=TMradius)
+        MZIUnitCell.add(l2path)
 
         # consolidate cells to master cell
         MZILatticeCell.add(gdspy.CellReference(MZIUnitCell))

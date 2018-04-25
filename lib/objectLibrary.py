@@ -329,9 +329,7 @@ def couplingTaper(layerNumber = 1, taperWidth = 0.180, waveguideWidth = 0.5, tap
 
 def MZI(deltaL = 40, Lref = 40, gapLength = 20,
         waveguideWidth = 0.5, bendRadius = 5,
-        coupleType = "Y",polarization="TM"):
-
-    layerNumber = 1
+        coupleType = "Y",polarization="TM",layerNumber = 1):
 
     # Since we are rounding our paths, we are going to lose some path length.
     # can compensate for this ahead of time:
@@ -351,9 +349,6 @@ def MZI(deltaL = 40, Lref = 40, gapLength = 20,
     bottomBranch = gdspy.Cell('referenceBranch_'+(coupleType))
     bottomBranch.add(gdspy.Rectangle([-Lref/2 , waveguideWidth/2],[Lref/2, -waveguideWidth/2],layer=1))
 
-    # Do top branch
-    bendRadius = 5;
-
     outerArm = (Lref-gapLength)/2
 
     length = [outerArm,leg,gapLength,leg,outerArm]
@@ -361,16 +356,13 @@ def MZI(deltaL = 40, Lref = 40, gapLength = 20,
     topBranch = gdspy.Cell('deltaBranch_'+(coupleType))
 
     topBranchPoly = gdspy.L1Path((0, 0), '+x', waveguideWidth, length, turn,layer=1);
-    topBranchPoly.fillet(bendRadius)
+    topBranchPoly.fillet(radius=bendRadius)
     leftSquare    = gdspy.Rectangle([0,-waveguideWidth/2],[waveguideWidth,waveguideWidth/2],layer=1)
     rightSquare   = gdspy.Rectangle([Lref-waveguideWidth,-waveguideWidth/2],[Lref,waveguideWidth/2],layer=1)
 
     union = gdspy.fast_boolean(topBranchPoly,[leftSquare,rightSquare],'or',layer=layerNumber)
 
     topBranch.add(union)
-
-    # Half the height of the entire splitter - used to align branches with splitters
-    cen2Branch = 2.0 + 1.2/2 - waveguideWidth/2.0
 
     # Get Branch dimensions
     CouplerDims   = Coupler.get_bounding_box()
