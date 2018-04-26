@@ -57,7 +57,7 @@ def SBend(Zs=10,Xs=10,waveguideWidth=0.5,layerNumber=1):
 
     points = numpy.stack([z,y],axis=1)
 
-    poly_cell = gdspy.Cell('sBend_Length='+str(Zs)+'_Height='+str(Xs))
+    poly_cell = gdspy.Cell('sBend_Length='+str(Zs)+'_Height='+str(Xs),exclude_from_current=True)
     poly_cell.add(gdspy.PolyPath(points,waveguideWidth,layer=layerNumber))
 
     return poly_cell
@@ -142,10 +142,10 @@ def YBranch(layerNumber=1):
 
 def branchCoupler(layerNumber = 1, polarization = 'TE'):
     # Intialize cells
-    symmetricCoupler = gdspy.Cell('symmetricCoupler')
-    phaseControl     = gdspy.Cell('phaseControl')
-    branchCoupler    = gdspy.Cell('branchCoupler_'+polarization)
-    couplerTaper     = gdspy.Cell('couplerTaper')
+    symmetricCoupler = gdspy.Cell('symmetricCoupler',exclude_from_current=True)
+    phaseControl     = gdspy.Cell('phaseControl',exclude_from_current=True)
+    branchCoupler    = gdspy.Cell('branchCoupler_'+polarization,exclude_from_current=True)
+    couplerTaper     = gdspy.Cell('couplerTaper',exclude_from_current=True)
 
     # Determine the curavture based on the mode of interest
     if polarization == 'TE':
@@ -237,6 +237,7 @@ def branchCoupler(layerNumber = 1, polarization = 'TE'):
     branchCoupler.add(gdspy.CellReference(
         sBendCell,rotation=180).translate(-(L2/2 + L1 + taperLength),-(symmWaveguideSep/2 + symmWaveguideWidth/2)))
 
+    branchCoupler.flatten();
     return branchCoupler
 
 # ------------------------------------------------------------------ #
@@ -329,15 +330,10 @@ def couplingTaper(layerNumber = 1, taperWidth = 0.180, waveguideWidth = 0.5, tap
 
 def MZI(deltaL = 40, Lref = 40, gapLength = 20,
         waveguideWidth = 0.5, bendRadius = 5,
-        coupleType = "Y",polarization="TM",layerNumber = 1):
+        coupleType = "Y",polarization="TM",layerNumber = 1,
+        maxH = 100):
 
-    # Since we are rounding our paths, we are going to lose some path length.
-    # can compensate for this ahead of time:
-    compensation = (2*bendRadius) * 4 - 2* numpy.pi * bendRadius
-    LTop = Lref + deltaL + compensation
-
-    leg = (LTop - Lref) / 2
-
+    # Decide which coupler to use
     if coupleType == "Y":
         Coupler = YBranch()
     elif coupleType == "C":
@@ -345,16 +341,32 @@ def MZI(deltaL = 40, Lref = 40, gapLength = 20,
     else:
         raise Exception('Invalid Coupler Type Specified; must be Y or C')
 
+    # Calculate how many, and how long each leg of the coupling arm needs to be
+    numLegs = 2
+    if deltaL/2 > maxH:
+        numLegs = numpy.floor((deltaL) / maxH + 1)
+        if numLegs % 2 == 1:
+            numLegs = numLegs + 1
+        print(numLegs)
+    leg = (deltaL/numLegs) + (4*bendRadius - numpy.pi*bendRadius)  # compensate with half circumf of circle
+
     # Connect bottom branch
-    bottomBranch = gdspy.Cell('referenceBranch_'+(coupleType))
+    bottomBranch = gdspy.Cell('referenceBranch_'+(coupleType),exclude_from_current=True)
     bottomBranch.add(gdspy.Rectangle([-Lref/2 , waveguideWidth/2],[Lref/2, -waveguideWidth/2],layer=1))
 
-    outerArm = (Lref-gapLength)/2
+    # Connect top branch
+    gapLength = Lref / (numLegs+1)
 
-    length = [outerArm,leg,gapLength,leg,outerArm]
-    turn = [1,-1,-1,1]
-    topBranch = gdspy.Cell('deltaBranch_'+(coupleType))
-
+    #outerArm = (Lref-gapLength)/2
+    basicTurn = [1,-1,-1,1]
+    basicLength = [gapLength,leg,gapLength,leg]
+    turn   = []
+    length = []
+    for k in range(0,int(numLegs/2)):
+        length.extend(basicLength)
+        turn.extend(basicTurn)
+    length.append(gapLength)
+    topBranch = gdspy.Cell('deltaBranch_'+(coupleType),exclude_from_current=True)
     topBranchPoly = gdspy.L1Path((0, 0), '+x', waveguideWidth, length, turn,layer=1);
     topBranchPoly.fillet(radius=bendRadius)
     leftSquare    = gdspy.Rectangle([0,-waveguideWidth/2],[waveguideWidth,waveguideWidth/2],layer=1)
@@ -378,5 +390,7 @@ def MZI(deltaL = 40, Lref = 40, gapLength = 20,
     MZIcell.add(gdspy.CellReference(Coupler, (Lref/2 + CouplerWidth/2,0),rotation=180))
     MZIcell.add(gdspy.CellReference(bottomBranch, (0,-(CouplerHeight/2 - waveguideWidth/2.0))))
     MZIcell.add(gdspy.CellReference(topBranch, (-Lref/2,+(CouplerHeight/2 - waveguideWidth/2.0))))
+
+    MZIcell.flatten()
 
     return MZIcell
