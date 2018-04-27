@@ -202,6 +202,18 @@ pos = (chipDim - (vernierPadding), -(vernierPadding))
 RRLatticeCell.add(gdspy.CellReference(vernierCell,pos))
 
 # ------------------------------------------------------------------ #
+#      Center Parent Cell for fab
+# ------------------------------------------------------------------ #
+centeredCell = gdspy.Cell('centeredCell')
+
+RRDims   = RRLatticeCell.get_bounding_box()
+RRWidth  = abs(RRDims[0,0] - RRDims[1,0])
+RRHeight = abs(RRDims[0,1] - RRDims[1,1])
+
+pos = (-RRWidth/2,RRHeight/2)
+centeredCell.add(gdspy.CellReference(RRLatticeCell,pos))
+
+# ------------------------------------------------------------------ #
 #      OUTPUT GDS FILE
 # ------------------------------------------------------------------ #
 

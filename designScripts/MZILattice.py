@@ -180,6 +180,19 @@ pos = (chipDim - (vernierPadding), -(vernierPadding))
 MZILatticeCell.add(gdspy.CellReference(vernierCell,pos))
 
 # ------------------------------------------------------------------ #
+#      Center Parent Cell for fab
+# ------------------------------------------------------------------ #
+centeredCell = gdspy.Cell('centeredCell')
+
+MZIDims   = MZILatticeCell.get_bounding_box()
+MZIWidth  = abs(MZIDims[0,0] - MZIDims[1,0])
+MZIHeight = abs(MZIDims[0,1] - MZIDims[1,1])
+
+pos = (-MZIWidth/2,MZIHeight/2)
+centeredCell.add(gdspy.CellReference(MZILatticeCell,pos))
+
+
+# ------------------------------------------------------------------ #
 #      OUTPUT
 # ------------------------------------------------------------------ #
 
