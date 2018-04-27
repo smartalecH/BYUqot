@@ -8,10 +8,15 @@
 # VERSION HISTORY
 # 10 Apr 2018 - AMH - Initialization
 # 24 Apr 2018 - AMH - Added vernier pattern, directional couplers
+# 25 Apr 2018 - AMH - Varied the deltaL for each MZI
+# ------------------------------------------------------------------ #
 #
 # ------------------------------------------------------------------ #
-
-
+#      To - DO
+# ------------------------------------------------------------------ #
+# Code cleanup
+# Add bosch etch buffer off of floor plan
+#
 # ------------------------------------------------------------------ #
 #      Import libraries
 # ------------------------------------------------------------------ #
@@ -29,47 +34,55 @@ import numpy as np
 import objectLibrary as obLib
 
 # ------------------------------------------------------------------ #
-#      Initialize parent cell
+#      Set params
 # ------------------------------------------------------------------ #
 
+# Initalize parent cell
 MZILatticeCell = gdspy.Cell('MZILattice')
 
-# ------------------------------------------------------------------ #
-#      Add a floor plan
-# ------------------------------------------------------------------ #
+# Chip params
+layerNumber = 1              # silicon layer
+chipDim     = 8.78 * 1e3     # Width / height of our chip
+couplePitch = 127            # distance between couplers
 
-# Width / height of our chip
-chipDim = 8.78 * 1e3
+# Waveguide parameters
+waveguideWidth      = 0.5    # width of all our waveguides
+waveguideBendRadius = 10     # bend radius of all waveguides in microns
 
-# width of all our waveguides
-waveguideWidth = 0.5;
+# MZI parameters
+deltaL      = 0      # Initial change in path length
+repeatDelta = 3      # Number of times to repeat the same MZI
+Lincrement  = 100    # Step wise increase in MZI
 
-deltaL = 0
-layerNumber = 1
-couplerBufferMiddle = 50
-couplerBufferBottom = 100
-TMradius = 10
+# Coupler parameters
+couplerBufferMiddle = 50   # Separation between bottom coupler and waveguide bend
+couplerBufferBottom = 100  # Separation between top coupler and waveguide bend
 
-repeatDelta = 3;
-Lincrement  = 100;
+# Taper Parameters
+taperBufferWidth = 0.180;   # width of the buffer after taper
+taperBufferLength = 5;      # length of the buffer after taper
 
 # Text parameters
 textBuffer = 20;      # distance from text to edge of chip and taper
 textSize   = 15;      # base size of text
 
-# Add floor plan
+# Vernier parameters
+vernierPadding = 0   # Padd the corner from the floor plan
+
+# ------------------------------------------------------------------ #
+#      Add a floor plan
+# ------------------------------------------------------------------ #
+
 MZILatticeCell.add(gdspy.Rectangle([0,0],[chipDim,-chipDim],layer=100))
 
 # ------------------------------------------------------------------ #
 #      Create several MZI's along chip
 # ------------------------------------------------------------------ #
 
-couplePitch = 127     # distance between couplers
-numMZI = np.floor(chipDim/couplePitch)    # Number of MZIs given pitch
+# Number of MZIs given pitch
+numMZI = np.floor(chipDim/couplePitch)
 
-# Initialize two kinds of MZIs and taper
-#MZIcellY = obLib.MZI(deltaL = deltaL, bendRadius = TMradius, Lref = 100, gapLength = 50, waveguideWidth = 0.5,coupleType="Y");
-
+# Initialize taper cell
 couplingTaperCell = obLib.couplingTaper()
 
 # Get dimensions of taper
@@ -80,10 +93,14 @@ taperHeight = abs(taperDims[0,1] - taperDims[1,1])
 # Iterate through MZIs and draw system
 incrementOffset = 0;
 for k in range(1,int(numMZI)):
+
+    # Iterate through all 3 tapers for each MZI
     if k % 3 == 0:
+
+        # Only create new MZI cell if it's a new path length difference
         if incrementOffset % repeatDelta == 0:
             deltaL = deltaL + Lincrement;
-            MZIcellC = obLib.MZI(deltaL = deltaL, bendRadius = TMradius,
+            MZIcellC = obLib.MZI(deltaL = deltaL, bendRadius = waveguideBendRadius,
             Lref = 250, gapLength = 50, waveguideWidth = 0.5,coupleType="C");
 
         # Initialize unit cell
@@ -107,6 +124,11 @@ for k in range(1,int(numMZI)):
             posTaper = (taperWidth/2,-(k+ktaper)*couplePitch)
             MZIUnitCell.add(gdspy.CellReference(couplingTaperCell,posTaper))
 
+            MZIUnitCell.add(gdspy.Rectangle(
+                [-taperBufferLength,-(k+ktaper)*couplePitch+taperBufferWidth/2],
+                [0,-(k+ktaper)*couplePitch-taperBufferWidth/2],
+                layer=layerNumber))
+
         # add text below coupling first taper
         text = gdspy.Text(str(int(deltaL)), textSize,
                 (textBuffer, -k*couplePitch - textBuffer - textSize/2),layer=layerNumber)
@@ -124,7 +146,7 @@ for k in range(1,int(numMZI)):
         l1path = gdspy.L1Path(initial_point=(taperWidth, -(k+1)*couplePitch),
                               direction='+x', width=waveguideWidth, length=length,
                               turn=turn, layer=layerNumber)
-        l1path.fillet(radius=TMradius)
+        l1path.fillet(radius=waveguideBendRadius)
         MZIUnitCell.add(l1path)
 
         # connect bottom taper to coupler
@@ -134,7 +156,7 @@ for k in range(1,int(numMZI)):
         l2path = gdspy.L1Path(initial_point=(taperWidth, -(k+2)*couplePitch),
                               direction='+x', width=waveguideWidth, length=length,
                               turn=turn, layer=layerNumber)
-        l2path.fillet(radius=TMradius)
+        l2path.fillet(radius=waveguideBendRadius)
         MZIUnitCell.add(l2path)
 
         # consolidate cells to master cell
@@ -146,17 +168,15 @@ for k in range(1,int(numMZI)):
 #      Vernier Pattern
 # ------------------------------------------------------------------ #
 
-vernierCell = obLib.vernier(1)
+vernierCell = obLib.vernier(layerNumber)
 
 # get dimensions of vernier pattern
 vernierDims   = vernierCell.get_bounding_box()
 vernierWidth  = abs(vernierDims[0,0] - vernierDims[1,0])
 vernierHeight = abs(vernierDims[0,1] - vernierDims[1,1])
 
-# Padd the corner from the floor plan
-padding = 30
 # Add vernier pattern
-pos = (chipDim - (padding), -(padding))
+pos = (chipDim - (vernierPadding), -(vernierPadding))
 MZILatticeCell.add(gdspy.CellReference(vernierCell,pos))
 
 # ------------------------------------------------------------------ #

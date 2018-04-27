@@ -347,7 +347,6 @@ def MZI(deltaL = 40, Lref = 40, gapLength = 20,
         numLegs = numpy.floor((deltaL) / maxH + 1)
         if numLegs % 2 == 1:
             numLegs = numLegs + 1
-        print(numLegs)
     leg = (deltaL/numLegs) + (4*bendRadius - numpy.pi*bendRadius)  # compensate with half circumf of circle
 
     # Connect bottom branch
