@@ -9,13 +9,12 @@
 # 10 Apr 2018 - AMH - Initialization
 # 24 Apr 2018 - AMH - Added vernier pattern, directional couplers
 # 25 Apr 2018 - AMH - Varied the deltaL for each MZI
+# 26 Apr 2018 - AMH - Added centered parent cell
 # ------------------------------------------------------------------ #
 #
 # ------------------------------------------------------------------ #
 #      To - DO
 # ------------------------------------------------------------------ #
-# Code cleanup
-# Add bosch etch buffer off of floor plan
 #
 # ------------------------------------------------------------------ #
 #      Import libraries
