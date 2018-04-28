@@ -8,7 +8,7 @@
 # VERSION HISTORY
 # 10 Apr 2018 - AMH - Initialization
 # 24 Apr 2018 - AMH - Added vernier pattern, directional couplers
-#
+# 27 Apr 2018 - AMH - Added Bragg Grating
 # ------------------------------------------------------------------ #
 # List of components:
 # ------------------------------------------------------------------ #
@@ -19,6 +19,7 @@
 # Vernier Pattern .......................................... 04/24/2018
 # Coupling Taper ........................................... 04/24/2018
 # MZI ...................................................... 04/24/2018
+# Bragg Grating ............................................ 04/27/2018
 
 # ------------------------------------------------------------------ #
 #      Import libraries
@@ -393,3 +394,39 @@ def MZI(deltaL = 40, Lref = 40, gapLength = 20,
     MZIcell.flatten()
 
     return MZIcell
+
+# ------------------------------------------------------------------ #
+#      Bragg Grating
+# ------------------------------------------------------------------ #
+
+def braggGrating(period = .310, NG = 400,
+                 waveguideWidth = 0.5, dwidth = 0.05,layerNumber=1):
+    # Intialize cells
+    name = 'braggCell=' + str(int(period*1e3)) + '_NG='  + str(int(NG)) + '_dwidth=' + str(int(dwidth*1e3))
+    braggCell = gdspy.Cell(name)
+
+    # Calculate Parameters
+    L = NG * period
+
+    # Generate main waveguide
+    waveguide = gdspy.Rectangle(
+        [-L/2,waveguideWidth/2 -  dwidth/2],
+        [L/2,-waveguideWidth/2 +  dwidth/2],
+        layer=layerNumber)
+
+    # Add side strips
+    strips = []
+    startRect = -L/2
+    stopRect  = -L/2 + period/2
+    for k in range(0,NG):
+        strips.append(gdspy.Rectangle(
+            [startRect,waveguideWidth/2 + dwidth/2],
+            [stopRect,-waveguideWidth/2 - dwidth/2],
+            layer=layerNumber))
+
+        startRect = startRect + period
+        stopRect = stopRect + period
+
+    finalShape = gdspy.fast_boolean(waveguide,strips,'or',layer=layerNumber)
+    braggCell.add(finalShape)
+    return braggCell
