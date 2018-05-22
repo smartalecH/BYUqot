@@ -59,7 +59,7 @@ expdata = np.genfromtxt(fname=filename,delimiter=',',skip_header=1)
 # ---------------------------------------------------------------------------- #
 
 cell = mp.Vector3()
-resolution = 30
+resolution = 200
 
 fcen = 1
 df = 3
@@ -123,5 +123,5 @@ plt.plot(lambdaEst,err,'o')
 plt.xlabel('Wavelength ($\mu m$)')
 plt.ylabel('$\%$ Error')
 plt.grid(True)
-plt.show()
 plt.savefig('refractiveIndex.png')
+plt.show()
