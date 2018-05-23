@@ -82,7 +82,6 @@ sim = mp.Simulation(
 # Extract out omega from each k vector
 all_freqs = sim.run_k_points(300, kpts)  # a list of lists of frequencies
 
-
 # Get wavelength data in microns
 k = np.asarray([v.x for v in kpts])
 
