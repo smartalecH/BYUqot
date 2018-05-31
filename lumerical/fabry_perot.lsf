@@ -1,0 +1,55 @@
+switchtolayout;
+deleteall;
+
+waveguideWidth = 0.5e-6;    # width of waveguide (y direction)
+waveguideLength = 30e-6;    # length of each waveguide (x direction)
+gap             = 10e-6;    # gap between waveguides
+inf             = 2e-6;
+
+indexSi = sqrt(12);
+indexGap = 1;
+
+# Add waveguide
+addrect;
+set('x',0);
+set('x span', 2*waveguideLength + gap);
+set('y',  0);
+set('y span', waveguideWidth);
+set('z', 0);
+set('z span', inf);
+
+set('index', indexSi);
+
+# Add gap
+addrect;
+set('x',0);
+set('x span', gap);
+set('y',  0);
+set('y span', waveguideWidth);
+set('z', 0);
+set('z span', inf);
+
+set('index', indexGap);
+
+# add mesh
+addmesh;
+set('x',0); set('x span', 2*waveguideLength);
+set('y',0); set('y span', 2*waveguideWidth);
+set('z',0); set('z span', 0);
+
+addfdtd;
+set('x',0); set('x span', 2*waveguideLength);
+set('y',0); set('y span', 2*waveguideWidth);
+set('z',0); set('z span', 0);
+
+addport;
+set('x',-waveguideLength/4);
+
+addport;
+set('x',waveguideLength/4);
+set('direction','Backward');
+
+run;
+
+
+

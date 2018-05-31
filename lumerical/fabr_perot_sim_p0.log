@@ -1,0 +1,72 @@
+FDTD Solutions Version 8.19.1466 (Mac 64bit)
+ expires (month/day/year): 6/29/2018
+using config file: /Users/hammthree/.config/Lumerical/FDTD Solutions.ini
+license host: Alecs-Air-4
+current time: Thu May 31 10:09:03 2018
+Running on host: Alecs-Air-4.hsd1.ut.comcast.net
+All processes are communicating and ready to proceed to simulation...
+Running fsp file: /Applications/Lumerical/FDTD Solutions/FDTD Solutions.app/Contents/MacOS/fdtd-engine -t 1 -remote /Users/hammthree/Documents/GitHub/BYUqot/lumerical/fabr_perot_sim.fsp
+number of processors is 4
+processors are distributed as: 4x1x1
+Running 3D Simulation
+Starting meshing
+Simulation size in gridpoints: 1505 x 116 x 17
+Refined 0 mesh cells (0%)
+Completed meshing!
+Meshing complete in 5.20528 seconds of CPU time
+Starting meshing
+Simulation size in gridpoints: 1505 x 116 x 17
+Refined 0 mesh cells (0%)
+Completed meshing!
+Meshing complete in 4.71996 seconds of CPU time
+Starting meshing
+Simulation size in gridpoints: 1505 x 116 x 17
+Refined 0 mesh cells (0%)
+Completed meshing!
+Meshing complete in 4.9144 seconds of CPU time
+0 0
+0 0
+0 0
+finished material properties
+Meshing Time: 0 seconds, Init Electrical Material Time: 0 seconds, Init Magnetic Material Time: 0
+Using selected optimization level: 2
+Selecting 3d kernel for splitFieldDirection=0 and optLevel=2
+-----------------------------------------
+Beginning initialization of 3D Simulation
+Starting to add sources to simulation
+Adding 3D Mode source propagating in X
+Using broadband source injection
+Error: the source field data for '::port 1 Mode Source' is not valid for the source orientation and dimension.
+Starting to add boundary conditions to simulation
+Adding 3D PML BC
+Adding 3D Parallel BC
+Adding 3D PML BC
+Adding 3D PML BC
+Adding 3D PML BC
+Adding 3D PML BC
+Starting to add monitors to Simulation
+Adding analysis monitor
+Adding 3D DFT monitor
+Monitor ::port 1 DFT is outside the simulation and will not record any data
+Adding 3D DFT monitor
+Monitor ::port 2 DFT is outside the simulation and will not record any data
+Finished initialization of 3D Simulation
+-----------------------------------------
+All processes are communicating and ready to proceed to simulation...
+Starting 1 total iterations
+Completed 1 iterations, or 0.000000e+00s of Simulation Time
+Process 0 starting to collect data
+    collecting monitor data
+Monitor ::port 1 DFT is outside the simulation and will not record any data
+Monitor ::port 2 DFT is outside the simulation and will not record any data
+    collecting source data
+Using broadband source injection
+Error: the source field data for '::port 1 Mode Source' is not valid for the source orientation and dimension.
+Finished collecting data
+Simulation completed successfully at: Thu May 31 10:09:28 2018
+Overall wall time measurements in seconds:
+    time to mesh and initialize: 25
+    time to run FDTD simulation: 0
+    time to finalize data and save to files: 0
+    FDTD solver speed: inf Mnodes/s
+    total FDTD solver speed on 4 processes: inf Mnodes/s
