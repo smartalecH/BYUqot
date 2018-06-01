@@ -73,9 +73,9 @@ def main():
     omega = 1 / 1.55  # frequency corresponding to 1.55um
 
     # Output the x component of the Poynting vector for num_bands bands at omega
-    ms.find_k(mp.NO_PARITY, omega, 1, num_bands, mp.Vector3(1), 1e-3, omega * 3.45,
-              omega * 0.1, omega * 4, mpb.output_poynting_x, mpb.display_yparities,
-              mpb.display_group_velocities)
+    temp = ms.find_k(mp.NO_PARITY, omega, 1, num_bands, mp.Vector3(1), 1e-3, omega * 3.45,
+              omega * 0.1, omega * 4)
+    print(temp)
 
 if __name__ == '__main__':
     main()
