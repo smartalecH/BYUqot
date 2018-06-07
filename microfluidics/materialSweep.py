@@ -3,15 +3,19 @@
 # ---------------------------------------------------------------------------- #
 #
 # Investigated Materials:
+# * NaCl
+# * Sucrose
+# * Ethylene Glycol
+# * Glycerol
+# * DMSO
 #
 # TODO:
-#
 #
 # ---------------------------------------------------------------------------- #
 # VERSION HISTORY
 # ---------------------------------------------------------------------------- #
 # 20 MAY 2018 - AMH - Initialization
-#
+# 07 JUN 2018 - AMH - Added Broadband Sweeps
 #
 # ---------------------------------------------------------------------------- #
 # Import Libraries
@@ -65,7 +69,7 @@ plt.legend()
 plt.grid(True,color='0.85')
 plt.xlabel('Index of Cladding')
 plt.ylabel('Effective Index')
-
+plt.savefig('effectiveIndex.png')
 
 # ---------------------------------------------------------------------------- #
 # Load Material Index Data
@@ -78,7 +82,7 @@ plt.ylabel('Effective Index')
 # “Refractive indices of common solvents and solutions at 1550 nm,”
 # Applied Optics, vol. 55, no. 4, p. 947, Feb. 2016.
 
-# Number of molarity points to plot
+# Number of molarity/concentration points to plot
 NW = 100
 
 # Begin new figure
@@ -171,6 +175,7 @@ plt.legend()
 plt.grid(True,color='0.85')
 plt.xlabel('Mass Fraction, W')
 plt.ylabel('Refractive Index')
+plt.savefig('materialIndex.png')
 
 # ---------------------------------------------------------------------------- #
 # Load Material Index Data
@@ -207,6 +212,8 @@ plt.grid(True,color='0.85')
 plt.xlabel('Mass Fraction, W')
 plt.ylabel('Effective Index')
 
+plt.savefig('materialEffectiveIndex.png')
+
 # ---------------------------------------------------------------------------- #
 # MZI Results
 # ---------------------------------------------------------------------------- #
@@ -215,63 +222,183 @@ plt.ylabel('Effective Index')
 # the entire device, so that both arms have the same new effective index.
 
 # Begin new figure
-fig, ax = plt.subplots(3, 3, sharex='col', sharey='row')
-
+#fig, ax = plt.subplots(1, 1, sharex='col', sharey='row')
+plt.figure()
 lam = 1550e-9
 L1 = 250e-6
-deltaL = np.array([0, 100e-6, 200e-6, 300e-6, 400e-6, 500e-6, 600e-6, 700e-6, 800e-6])
+deltaL = [100e-6]
 
 for k in range(0,len(deltaL)):
     neff = 1
     L2 = L1 + deltaL[k]
     I = lambda Beta: 0.5 * (1+np.cos(Beta * L1 - Beta * L2))
 
-    row = int(k/3)
-    col = k % 3
+    row = int(k/2)
+    col = k % 2
 
     # ------------------- NaCl -------------------------------
     BetaNaCl = 2 * np.pi * neffNaCl/lam
     INaCl = I(BetaNaCl)
-    ax[row,col].plot(WNaCl,INaCl,label='NaCl')
+    plt.plot(WNaCl,INaCl,label='NaCl')
     # -------------------  Sucrose ---------------------------
     BetaSucrose = 2 * np.pi * neffSucrose/lam
     ISucrose = I(BetaNaCl)
-    ax[row,col].plot(WSucrose,ISucrose,label='Sucrose')
+    plt.plot(WSucrose,ISucrose,label='Sucrose')
     # -------------------  Ethylene Glycol -------------------
     BetaEG = 2 * np.pi * neffEG/lam
     IEG = I(BetaEG)
-    ax[row,col].plot(WEG,IEG,label='Ethylene Glycol')
+    plt.plot(WEG,IEG,label='Ethylene Glycol')
     # -------------------  Glycerol --------------------------
     BetaGlycerol = 2 * np.pi * neffGlycerol/lam
     IGlycerol = I(BetaGlycerol)
-    ax[row,col].plot(WGlycerol,IGlycerol,label='Glycerol')
+    plt.plot(WGlycerol,IGlycerol,label='Glycerol')
     # ------------------- DMSO -------------------------------
     BetaDMSO = 2 * np.pi * neffDMSO/lam
     IDMSO = I(BetaDMSO)
-    ax[row,col].plot(WDMSO,IDMSO,label='DMSO')
+    plt.plot(WDMSO,IDMSO,label='DMSO')
 
-    ax[row,col].set_title('$\Delta L =$ %i $\mu m$' %  ((deltaL[k])*1.0e6))
-    fig.text(0.5, 0.04, 'Mass Fraction, W', ha='center')
-    fig.text(0.04, 0.5, 'Power', va='center', rotation='vertical')
-
-# ---------------------------------------------------------------------------- #
-# Ring Resonator Results
-# ---------------------------------------------------------------------------- #
-
-
-
-
-
-
-
-
-
+    #plt.title('$\Delta L =$ %i $\mu m$' %  ((deltaL[k])*1.0e6))
+    plt.legend( ('NaCl','Sucrose','Ethylene Glycol','Glycerol','DMSO'),bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',
+               ncol=3, mode="expand", borderaxespad=0 )
+    plt.xlabel('Mass Fraction, W')
+    plt.ylabel('Power')
+#fig.text(0.5, 0.04, 'Mass Fraction, W', ha='center')
+#fig.text(0.04, 0.5, 'Power', va='center', rotation='vertical')
+plt.grid(True)
+plt.savefig('materialIndex.png')
 
 # ---------------------------------------------------------------------------- #
-# Bragg Grating Results
+# Broadband results for MZI
 # ---------------------------------------------------------------------------- #
+# Now let's look at a braodband spectrum for various MZI path length differences
+# and various concentrations of each solute
 
+neff = 1
+lambda0 = 1.55e-6
+deltaLambda = 15e-9
+lambdaStart = lambda0 - deltaLambda/2
+lambdaEnd   = lambda0 + deltaLambda/2
+numLambda   = 250
 
+lambdaVec = np.linspace(lambdaStart,lambdaEnd,numLambda)
+
+deltaL = [100e-6]
+
+# ------------------- NaCl -------------------------------
+#fig, ax = plt.subplots(2, 2, sharex='col', sharey='row')
+lgndEntries = []
+plt.figure()
+for k in range(0,len(deltaL)):
+    for kc in range(0,NW,int(NW/4)):
+        L2 = L1 + deltaL[k]
+        I = lambda Beta: 0.5 * (1+np.cos(Beta * L1 - Beta * L2))
+
+        row = int(k/2)
+        col = k % 2
+        BetaNaCl = 2 * np.pi * neffNaCl[kc]/lambdaVec
+        INaCl = I(BetaNaCl)
+        concentration = "W = %.2f" % WNaCl[kc]
+        plt.title('NaCl $\Delta L =$ %i $\mu m$' %  ((deltaL[k])*1.0e6))
+        plt.plot(lambdaVec*1e9,INaCl,label=concentration)
+        plt.xlabel('Wavelength, $nm$')
+        plt.ylabel('Power')
+        #fig.text(0.5, 0.04, 'Wavelength, $nm$', ha='center')
+        #fig.text(0.04, 0.5, 'Power', va='center', rotation='vertical')
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',
+               ncol=3, mode="expand", borderaxespad=0 )
+    plt.grid(True)
+    plt.savefig('NaCl.png')
+# -------------------  Sucrose ---------------------------
+#fig, ax = plt.subplots(2, 2, sharex='col', sharey='row')
+plt.figure()
+for k in range(0,len(deltaL)):
+    for kc in range(0,NW,int(NW/4)):
+        L2 = L1 + deltaL[k]
+        I = lambda Beta: 0.5 * (1+np.cos(Beta * L1 - Beta * L2))
+
+        row = int(k/2)
+        col = k % 2
+        BetaSucrose = 2 * np.pi * neffSucrose[kc]/lambdaVec
+        ISucrose = I(BetaSucrose)
+        concentration = "W = %.2f" % WSucrose[kc]
+        plt.plot(lambdaVec*1e9,ISucrose,label=concentration)
+        plt.title('Sucrose $\Delta L =$ %i $\mu m$' %  ((deltaL[k])*1.0e6))
+        plt.xlabel('Wavelength, $nm$')
+        plt.ylabel('Power')
+        #fig.text(0.5, 0.04, 'Wavelength, $nm$', ha='center')
+        #fig.text(0.04, 0.5, 'Power', va='center', rotation='vertical')
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',
+                   ncol=3, mode="expand", borderaxespad=0 )
+        plt.grid(True)
+        plt.savefig('Sucrose.png')
+
+# -------------------  Ethylene Glycol -------------------
+plt.figure()
+for k in range(0,len(deltaL)):
+    for kc in range(0,NW,int(NW/4)):
+        L2 = L1 + deltaL[k]
+        I = lambda Beta: 0.5 * (1+np.cos(Beta * L1 - Beta * L2))
+
+        row = int(k/2)
+        col = k % 2
+        BetaEG = 2 * np.pi * neffEG[kc]/lambdaVec
+        IEG = I(BetaEG)
+        concentration = "W = %.2f" % WEG[kc]
+        plt.plot(lambdaVec*1e9,IEG,label=concentration)
+        plt.title('Ethylene Glycol $\Delta L =$ %i $\mu m$' %  ((deltaL[k])*1.0e6))
+        plt.xlabel('Wavelength, $nm$')
+        plt.ylabel('Power')
+        #fig.text(0.5, 0.04, 'Wavelength, $nm$', ha='center')
+        #fig.text(0.04, 0.5, 'Power', va='center', rotation='vertical')
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',
+                   ncol=3, mode="expand", borderaxespad=0 )
+        plt.grid(True)
+        plt.savefig('EG.png')
+
+# -------------------  Glycerol --------------------------
+plt.figure()
+for k in range(0,len(deltaL)):
+    for kc in range(0,NW,int(NW/4)):
+        L2 = L1 + deltaL[k]
+        I = lambda Beta: 0.5 * (1+np.cos(Beta * L1 - Beta * L2))
+
+        row = int(k/2)
+        col = k % 2
+        BetaGlycerol = 2 * np.pi * neffGlycerol[kc]/lambdaVec
+        IGlycerol = I(BetaGlycerol)
+        concentration = "W = %.2f" % WGlycerol[kc]
+        plt.plot(lambdaVec*1e9,IGlycerol,label='Glycerol')
+        plt.title('Glycerol $\Delta L =$ %i $\mu m$' %  ((deltaL[k])*1.0e6))
+        plt.xlabel('Wavelength, $nm$')
+        plt.ylabel('Power')
+        #fig.text(0.5, 0.04, 'Wavelength, $nm$', ha='center')
+        #fig.text(0.04, 0.5, 'Power', va='center', rotation='vertical')
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',
+                   ncol=3, mode="expand", borderaxespad=0 )
+        plt.grid(True)
+        plt.savefig('glycerol.png')
+# ------------------- DMSO -------------------------------
+plt.figure()
+for k in range(0,len(deltaL)):
+    for kc in range(0,NW,int(NW/4)):
+        L2 = L1 + deltaL[k]
+        I = lambda Beta: 0.5 * (1+np.cos(Beta * L1 - Beta * L2))
+
+        row = int(k/2)
+        col = k % 2
+        BetaDMSO = 2 * np.pi * neffDMSO[kc]/lambdaVec
+        IDMSO = I(BetaDMSO)
+        concentration = "W = %.2f" % WDMSO[kc]
+        plt.plot(lambdaVec*1e9,IDMSO,label=concentration)
+        plt.title('DMSO $\Delta L =$ %i $\mu m$' %  ((deltaL[k])*1.0e6))
+        plt.xlabel('Wavelength, $nm$')
+        plt.ylabel('Power')
+        #fig.text(0.5, 0.04, 'Wavelength, $nm$', ha='center')
+        #fig.text(0.04, 0.5, 'Power', va='center', rotation='vertical')
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='upper center',
+                   ncol=3, mode="expand", borderaxespad=0 )
+        plt.grid(True)
+        plt.savefig('DMSO.png')
 
 # ---------------------------------------------------------------------------- #
 # Plotting Cleanup
