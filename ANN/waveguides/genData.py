@@ -13,10 +13,10 @@ import h5py
 # Define size of simulation array
 # ------------------------------------------------------------------------------ #
 
-nW      = int(2)
-nH      = int(2)
-nLambda = int(2)
-lMin    = int(100)
+nW      = int(30)
+nH      = int(30)
+nLambda = int(30)
+nL      = int(1000)
 
 # ------------------------------------------------------------------------------ #
 # Setup simulation domain
@@ -46,7 +46,7 @@ lambdaVec = np.linspace(lambdaMin,lambdaMax,nLambda)
 
 # Length vector
 lMax = 150
-nL   = 2
+lMin = 5
 lVec = np.linspace(lMin,lMax,nL)
 
 # Loss
@@ -107,4 +107,12 @@ for iW in range(nW):
 hf = h5py.File('waveguide.h5', 'w')
 hf.create_dataset('neff', data=neff, dtype='float64')
 hf.create_dataset('S12', data=S12, dtype='complex128')
+hf.create_dataset('lambdaVec', data=lambdaVec, dtype='float64')
+hf.create_dataset('wVec', data=wVec, dtype='float64')
+hf.create_dataset('hVec', data=hVec, dtype='float64')
+hf.create_dataset('lVec', data=lVec, dtype='float64')
 hf.close()
+
+print('################################################')
+print('Job finished')
+print('################################################')
