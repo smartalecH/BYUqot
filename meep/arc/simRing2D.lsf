@@ -1,0 +1,125 @@
+switchtolayout;
+deleteall;
+
+# Parameters
+arcN = 3.4;
+airN = 1;
+
+ringGap    = 0.1e-6;
+ringRadius = 5e-6;
+ringWidth  = 0.5e-6;
+busWidth   = 0.5e-6;
+thickness  = 0.22e-6;
+
+# Draw Ring
+addring;
+set('x',0); set('y',0); set('z',0);
+set('z span',thickness);
+set('inner radius',ringRadius - ringWidth/2);
+set('outer radius',ringRadius + ringWidth/2);
+set('theta start',0);
+set('theta stop',180);
+set('name','Arc');
+set('index',arcN);
+
+# Draw Bus
+addrect;
+set('x',0); 
+set('y',ringRadius + ringGap + busWidth/2 + ringWidth/2); 
+set('z',0);
+set('x span',3*ringradius);
+set('y span',busWidth);
+set('z span',thickness);
+set('name','Top Bus');
+set('index',arcN);
+
+# Draw left connecting waveguide
+addrect;
+set('x',-ringRadius); 
+set('y max',0); set('y min',-ringRadius); 
+set('z',0);
+set('x span',busWidth);
+set('z span',thickness);
+set('name','Left Bus');
+set('index',arcN);
+
+# Draw right connecting waveguide
+addrect;
+set('x',ringRadius); 
+set('y max',0); set('y min',-ringRadius); 
+set('z',0);
+set('x span',busWidth);
+set('z span',thickness);
+set('name','Right Bus');
+set('index',arcN);
+
+# Add simulation domain
+addmesh;
+set('x',0); set('z',0);
+set('x span',2.5*ringRadius);
+set('y min',-0.5*ringRadius);
+set('y max',1.5*ringRadius);
+set('z span',0);
+
+addfdtd;
+set('x',0); set('z',0);
+set('x span',2.5*ringRadius);
+set('y min',-0.5*ringRadius);
+set('y max',1.5*ringRadius);
+set('z span',0);
+set('dimension','2D');
+
+
+
+# Add ports
+addport;
+set('x',-ringRadius); set('y',ringRadius + ringGap + busWidth/2 + ringWidth/2); set('z',0);
+set('y span',4*busWidth);
+
+addport;
+set('x',ringRadius); set('y',ringRadius + ringGap + busWidth/2 + ringWidth/2); set('z',0);
+set('y span',4*busWidth);
+set('direction','backward');
+
+addport;
+set('injection axis','y-axis');
+set('direction','forward');
+set('x',-ringRadius); set('y',0); set('z',0);
+set('x span',4*busWidth);
+
+addport;
+set('injection axis','y-axis');
+set('direction','forward');
+set('x',ringRadius); set('y',0); set('z',0);
+set('x span',4*busWidth);
+
+setnamed("FDTD::ports","monitor frequency points",100);
+setnamed("FDTD","set simulation bandwidth",1);
+setnamed("FDTD","simulation wavelength min",1.5e-6);
+setnamed("FDTD","simulation wavelength max",1.6e-6);
+
+setnamed("FDTD::ports","source mode","mode 1");
+setnamed("FDTD::ports","source port","port 1");
+
+# Run simulation
+
+setnamed("FDTD::ports","source port","port 1");
+setnamed("FDTD::ports","source mode","mode 1");
+
+run;
+
+# S results
+port1ResS = getresult("FDTD::ports::port 1","S");
+port2ResS = getresult("FDTD::ports::port 2","S");
+port3ResS = getresult("FDTD::ports::port 3","S");
+port4ResS = getresult("FDTD::ports::port 4","S");
+
+freq = port1ResS.f;
+lambda = c/freq*1e6;
+plot(lambda,abs(port1ResS.S)^2);
+holdon;
+plot(lambda,abs(port2ResS.S)^2);
+plot(lambda,abs(port3ResS.S)^2);
+plot(lambda,abs(port4ResS.S)^2);
+
+# Save outpute
